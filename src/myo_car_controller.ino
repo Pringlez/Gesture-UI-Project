@@ -8,82 +8,51 @@
 #define motorRightSpeed 11
 #define trigPin 4
 #define echoPin 3
-#define motorVerySlow 50
-#define motorSlow 70
-#define motorMedium 90
-#define motorFast 120
+#define motorVerySlow 70
+#define motorSlow 90
+#define motorMedium 110
+#define motorFast 130
 #define motorBrake 0
 
-// Variables for ultrasonic sensor
-long duration, inches, cm;
+// Variables for ultrasonic sensor & current motor speed
+long duration, inches, cm, motorSpeed;
 
+// Creating new myo controller instance
 MyoController myo = MyoController();
 
 // Init setup function
 void setup(){
-    Serial.begin(9600); // setup serial
+    Serial.begin(9600);
+    // Setting the motor control pins
     pinMode(motorLeftSpeed, OUTPUT);
     pinMode(motorLeftOnOff, OUTPUT);
     pinMode(motorRightSpeed, OUTPUT);
     pinMode(motorRightOnOff, OUTPUT);
+    // Setting up myo instance
     myo.initMyo();
 }
 
 // Loop function
 void loop(){
-    myo.updatePose();
-    
-    switch ( myo.getCurrentPose() ) {
-    case rest:
-        // Reset
-        break;
-    case fist:
-        // Call forward function
-        break;
-    case waveIn:
-        // Turn left function call here
-        break;
-    case waveOut:
-        // Turn right function call here
-        break;
-    case fingersSpread:
-        // Call the break function
-        break;
+    delay(75);
+    checkForObjects();
+    getGesturePose();
+    // If no objects found within specific distance then set motor speed
+    if (cm > 50){
+        motorSpeed = motorMedium;
     }
-    
-    delay(100);
-    
-    // Sending pulses & receive pulses on ultrasonic sensor
-    sendPulse();
-    rcvPulse();
-    // Converting distance from ultrasonic sensor to cm
-    convertToDistance();
-    Serial.println(cm);
-    delay(250);
-
-    // If no object found within 100 cm then set motor speed to medium
-    // Else if object found within 75 to 100 cm then set motor speed to slow
-    // Else if object within 35 cm then break, reverse & turn left
-    if (cm > 100){
-        Forward(motorMedium);
-    }
-    else if (cm >= 75 && cm < 100){
-        Forward(motorSlow);
-    }
-    else if (cm < 35){
-        Brake(motorBrake);
-        delay(250);
-        Reverse(motorSlow);
-        delay(200);
-        TurnLeft(motorVerySlow);
-        delay(35);
+    else if(cm > 100){
+        motorSpeed = motorFast;
     }
 }
 
 // Function to propel motors forward
 void Forward(int motorSpeed){
+    // If an object is found within 30cm then set motor speed to stop
+    if (cm < 30){
+        motorSpeed = motorBrake;
+    }
     Serial.println("Forward");
-    delay(250);
     analogWrite(motorLeftSpeed, motorSpeed);
     analogWrite(motorRightSpeed, motorSpeed);
     digitalWrite(motorLeftOnOff, LOW);
@@ -93,7 +62,6 @@ void Forward(int motorSpeed){
 // Function to propel motors in reverse
 void Reverse(int motorSpeed){
     Serial.println("Reverse");
-    delay(250);
     digitalWrite(motorLeftSpeed, LOW);
     digitalWrite(motorRightSpeed, LOW);
     analogWrite(motorLeftOnOff, motorSpeed);
@@ -103,7 +71,6 @@ void Reverse(int motorSpeed){
 // Function to change the direction of the motors to turn left
 void TurnLeft(int motorSpeed){
     Serial.println("Turn Right");
-    delay(250);
     analogWrite(motorLeftOnOff, motorSpeed);
     analogWrite(motorRightSpeed, motorSpeed);
     digitalWrite(motorLeftSpeed, LOW);
@@ -113,7 +80,6 @@ void TurnLeft(int motorSpeed){
 // Function to change the direction of the motors to turn right
 void TurnRight(int motorSpeed){
     Serial.println("Turn Left");
-    delay(250);
     digitalWrite(motorLeftOnOff, LOW);
     digitalWrite(motorRightSpeed, LOW);
     analogWrite(motorRightOnOff, motorSpeed);
@@ -122,12 +88,48 @@ void TurnRight(int motorSpeed){
 
 // Function to stop motors
 void Brake(int motorSpeed){
-    Serial.println("Brake");
-    delay(125);
+    Serial.println("Braking!");
     analogWrite(motorLeftSpeed, motorBrake);
     analogWrite(motorRightSpeed, motorBrake);
     digitalWrite(motorLeftOnOff, LOW);
     digitalWrite(motorRightOnOff, LOW);
+}
+
+// Function to get the current gesture pose
+void getGesturePose(){
+    myo.updatePose();
+    // Getting current pose then apply specific motor function
+    switch ( myo.getCurrentPose() ) {
+      case rest:
+          // Reset
+          Brake(motorBrake);
+          break;
+      case fist:
+          // Call forward function
+          Forward(motorSpeed);
+          break;
+      case waveIn:
+          // Turn left function call here
+          TurnLeft(motorSlow);
+          break;
+      case waveOut:
+          // Turn right function call here
+          TurnRight(motorSlow);
+          break;
+      case fingersSpread:
+          // Call the break function
+          Reverse(motorSpeed);
+          break;
+    }
+}
+
+// Function to check for objects in front of the device
+void checkForObjects(){
+    // Sending pulses & receive pulses on ultrasonic sensor
+    sendPulse();
+    rcvPulse();
+    // Converting distance from ultrasonic sensor to cm
+    convertToDistance();
 }
 
 // Function to convert microseconds to inches

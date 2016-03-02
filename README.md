@@ -26,6 +26,8 @@ The underside of the chassis holds the breadboard into place along with most of 
 ![alt text](/images/image_2.jpg "Chassis Image 2")
 
 ## The Software
-The software is a currently under development, a basic version of the software exists in the repository. The Myo armband gesture have not been implemented yet.
+First you need to upload the sketch to your Arduino board. Then run the application in the bin directory called 'MyoDuino.exe' to bind your myo armband to your running Arduino. You should see the different poses appearing in the window. Also make sure your myo armband is up to temperature before attempting to control your device, myo only registers poses correctly when the armband is up to body temperature.
 
-To be updated...
+When you run the executable you should see a window pop asking which COM port your Arduino device is using to communicate with your PC. Un-tick the checkbox also to stop the myo armband from locking.
+
+![alt text](/images/image_4.jpg "Chassis Image 4")
