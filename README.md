@@ -12,6 +12,10 @@ Building Process
 ----------------
 The process of building the chassis was quite simple. A couple of nuts & bolts attached the motors & controller board. The motor driver board was mounted on the under side of the chassis. Wiring was tricky, cable management was nightmare but in the end we think it came together fairly well.
 
+##Mobile App
+https://github.com/ultimatecodelab/Bluetooth-Controller-Arduino
+We hope to control our robot using  speech. Mobile app will be programmed in Java. User can speak the phrases like "move forward / back". The app will translate the speech to text and send  the translated bytes to bluetooth chip. Bluetooth chip will be programmed to listen for any incoming messages.
+
 ## The Hardware
 The chassis is based on 3mm thick sheet of plastic, all mounting holes were pre-drilled. There was just about enough space to mount a 3s LiPo battery, breadboard, motor driver and microcontroller.
 
