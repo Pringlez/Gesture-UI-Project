@@ -1,13 +1,22 @@
-// The myo libray
+// The myo libray & bluetooth
 #include <MyoController.h>
+#include <SPI.h>
+#include "Adafruit_BLE_UART.h"
+
+// Bluetooth control pins
+// UNO : CLK = 13, MISO = 12, MOSI = 11
+
+#define ADAFRUITBLE_RDY 2
+#define ADAFRUITBLE_RST 7
+#define ADAFRUITBLE_REQ 8
 
 // Defining motor control pins, ultrasonic sensor pins & motor speeds 
 #define motorLeftSpeed 5
 #define motorLeftOnOff 6
-#define motorRightOnOff 10
-#define motorRightSpeed 11
-#define trigPin 4
+#define motorRightOnOff 9
+#define motorRightSpeed 10
 #define echoPin 3
+#define trigPin 4
 #define motorVerySlow 70
 #define motorSlow 90
 #define motorMedium 110
@@ -17,23 +26,32 @@
 // Variables for ultrasonic sensor & current motor speed
 long duration, inches, cm, motorSpeed;
 
-// Creating new myo controller instance
+// Creating new myo controller & bluetooth instance
 MyoController myo = MyoController();
+Adafruit_BLE_UART BTLEserial = Adafruit_BLE_UART(ADAFRUITBLE_REQ, ADAFRUITBLE_RDY, ADAFRUITBLE_RST);
 
 // Init setup function
 void setup(){
-    Serial.begin(9600);
     // Setting the motor control pins
     pinMode(motorLeftSpeed, OUTPUT);
     pinMode(motorLeftOnOff, OUTPUT);
     pinMode(motorRightSpeed, OUTPUT);
     pinMode(motorRightOnOff, OUTPUT);
+    Serial.begin(9600);
+    while(!Serial);
+    Serial.println(F("Adafruit Bluefruit Low Energy nRF8001 - Running!"));
+    // Setting name, max seven characters for name!
+    BTLEserial.setDeviceName("MyoCar");
+    BTLEserial.begin();
     // Setting up myo instance
     myo.initMyo();
 }
 
+aci_evt_opcode_t laststatus = ACI_EVT_DISCONNECTED;
+
 // Loop function
 void loop(){
+    checkBluetooth();
     delay(75);
     checkForObjects();
     getGesturePose();
@@ -93,6 +111,58 @@ void Brake(int motorSpeed){
     analogWrite(motorRightSpeed, motorBrake);
     digitalWrite(motorLeftOnOff, LOW);
     digitalWrite(motorRightOnOff, LOW);
+}
+
+// Function to check bluetooth status
+void checkBluetooth(){
+    BTLEserial.pollACI();
+    // What is current status of chip
+    aci_evt_opcode_t status = BTLEserial.getState();
+    // If the status changed....
+    if (status != laststatus) {
+        // print it out!
+        if (status == ACI_EVT_DEVICE_STARTED) {
+            Serial.println(F("* Advertising started"));
+        }
+        if (status == ACI_EVT_CONNECTED) {
+            Serial.println(F("* Connected!"));
+        }
+        if (status == ACI_EVT_DISCONNECTED) {
+            Serial.println(F("* Disconnected or advertising timed out"));
+        }
+        // OK set the last status change to this one
+        laststatus = status;
+    }
+
+    if (status == ACI_EVT_CONNECTED) {
+        // Lets see if there's any data for us!
+        if (BTLEserial.available()) {
+            Serial.print("* "); Serial.print(BTLEserial.available()); Serial.println(F(" bytes available from BTLE"));
+        }
+        // OK while we still have something to read, get a character and print it out
+        while (BTLEserial.available()) {
+            char c = BTLEserial.read();
+            Serial.print(c);
+        }
+    }
+
+    // Next up, see if we have any data to get from the Serial console
+
+    if (Serial.available()) {
+        // Read a line from Serial
+        Serial.setTimeout(100); // 100 millisecond timeout
+        String s = Serial.readString();
+        
+        // We need to convert the line to bytes, no more than 20 at this time
+        uint8_t sendbuffer[20];
+        s.getBytes(sendbuffer, 20);
+        char sendbuffersize = min(20, s.length());
+        
+        Serial.print(F("\n* Sending -> \"")); Serial.print((char *)sendbuffer); Serial.println("\"");
+        
+        // write the data
+        BTLEserial.write(sendbuffer, sendbuffersize);
+    }
 }
 
 // Function to get the current gesture pose
@@ -176,6 +246,6 @@ void convertToDistance(){
     // convert the time into a distance
     inches = microsecondsToInches(duration);
     cm = microsecondsToCentimeters(duration);
-    Serial.println(cm);
+    //Serial.println(cm);
     delay(50);
 }
