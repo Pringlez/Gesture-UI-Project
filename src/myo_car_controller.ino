@@ -5,7 +5,6 @@
 
 // Bluetooth control pins
 // UNO : CLK = 13, MISO = 12, MOSI = 11
-
 #define ADAFRUITBLE_RDY 2
 #define ADAFRUITBLE_RST 7
 #define ADAFRUITBLE_REQ 8
@@ -40,7 +39,7 @@ void setup(){
     Serial.begin(9600);
     while(!Serial);
     Serial.println(F("Adafruit Bluefruit Low Energy nRF8001 - Running!"));
-    // Setting name, max seven characters for name!
+    // Setting name, max seven characters for bluetooth device name!
     BTLEserial.setDeviceName("MyoCar");
     BTLEserial.begin();
     // Setting up myo instance
@@ -88,7 +87,7 @@ void Reverse(int motorSpeed){
 
 // Function to change the direction of the motors to turn left
 void TurnLeft(int motorSpeed){
-    Serial.println("Turn Right");
+    Serial.println("Turn Left");
     analogWrite(motorLeftOnOff, motorSpeed);
     analogWrite(motorRightSpeed, motorSpeed);
     digitalWrite(motorLeftSpeed, LOW);
@@ -97,7 +96,7 @@ void TurnLeft(int motorSpeed){
 
 // Function to change the direction of the motors to turn right
 void TurnRight(int motorSpeed){
-    Serial.println("Turn Left");
+    Serial.println("Turn Right");
     digitalWrite(motorLeftOnOff, LOW);
     digitalWrite(motorRightSpeed, LOW);
     analogWrite(motorRightOnOff, motorSpeed);
@@ -141,8 +140,8 @@ void checkBluetooth(){
         }
         // OK while we still have something to read, get a character and print it out
         while (BTLEserial.available()) {
-            char c = BTLEserial.read();
-            Serial.print(c);
+            char cmd = BTLEserial.read();
+            getBluetoothCmd(toupper(cmd));
         }
     }
 
@@ -189,6 +188,33 @@ void getGesturePose(){
       case fingersSpread:
           // Call the break function
           Reverse(motorSpeed);
+          break;
+    }
+}
+
+// Function to get command from bluetooth
+void getBluetoothCmd(char command){
+    // Getting current pose then apply specific motor function
+    switch ( command ) {
+      case 'N':
+          // Reset
+          Brake(motorBrake);
+          break;
+      case 'F':
+          // Call forward function
+          Forward(motorVerySlow);
+          break;
+      case 'L':
+          // Turn left function call here
+          TurnLeft(motorVerySlow);
+          break;
+      case 'R':
+          // Turn right function call here
+          TurnRight(motorVerySlow);
+          break;
+      case 'B':
+          // Call the break function
+          Reverse(motorVerySlow);
           break;
     }
 }
