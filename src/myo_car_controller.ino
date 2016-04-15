@@ -23,7 +23,7 @@
 #define motorBrake 0
 
 // Variables for ultrasonic sensor & current motor speed
-long duration, inches, cm, motorSpeed;
+long duration, inches, cm, bluetoothMode;
 
 // Creating new myo controller & bluetooth instance
 MyoController myo = MyoController();
@@ -43,6 +43,7 @@ void setup(){
     BTLEserial.setDeviceName("MyoCar");
     BTLEserial.begin();
     // Setting up myo instance
+    bluetoothMode = false;
     myo.initMyo();
 }
 
@@ -50,16 +51,13 @@ aci_evt_opcode_t laststatus = ACI_EVT_DISCONNECTED;
 
 // Loop function
 void loop(){
-    checkBluetooth();
     delay(75);
     checkForObjects();
-    getGesturePose();
-    // If no objects found within specific distance then set motor speed
-    if (cm > 50){
-        motorSpeed = motorMedium;
+    if(bluetoothMode){
+      checkBluetooth();
     }
-    else if(cm > 100){
-        motorSpeed = motorFast;
+    else{
+      getGesturePose();
     }
 }
 
@@ -175,19 +173,19 @@ void getGesturePose(){
           break;
       case fist:
           // Call forward function
-          Forward(motorSpeed);
+          Forward(motorSlow);
           break;
       case waveIn:
           // Turn left function call here
-          TurnLeft(motorSlow);
+          TurnLeft(motorVerySlow);
           break;
       case waveOut:
           // Turn right function call here
-          TurnRight(motorSlow);
+          TurnRight(motorVerySlow);
           break;
       case fingersSpread:
           // Call the break function
-          Reverse(motorSpeed);
+          Reverse(motorSlow);
           break;
     }
 }
@@ -202,11 +200,11 @@ void getBluetoothCmd(char command){
           break;
       case 'F':
           // Call forward function
-          Forward(motorVerySlow);
+          Forward(motorSlow);
           break;
       case 'L':
           // Turn left function call here
-          TurnLeft(motorVerySlow);
+          TurnLeft(motorSlow);
           break;
       case 'R':
           // Turn right function call here
