@@ -23,7 +23,8 @@
 #define motorBrake 0
 
 // Variables for ultrasonic sensor & current motor speed
-long duration, inches, cm, bluetoothMode;
+long duration, inches, cm;
+bool bluetoothMode;
 
 // Creating new myo controller & bluetooth instance
 MyoController myo = MyoController();
